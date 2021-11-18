@@ -1,8 +1,10 @@
 import React from 'react';
-import {Button, DeviceEventEmitter, NativeModules, StyleSheet, Text, View} from 'react-native';
+import {Button, DeviceEventEmitter, NativeModules, StyleSheet, Text, ToastAndroid, View} from 'react-native';
 import {Navigation} from 'react-native-navigation';
 import {HomePageFragment} from './src/HomePageFragment';
 import Icon from 'react-native-vector-icons/FontAwesome5';
+import PropsText from './src/PropsText';
+import BlinkApp from './src/BlinkApp';
 
 
 const LoginScreen = () => {
@@ -29,27 +31,22 @@ const LoginScreen = () => {
     );
 };
 
-/**
- * 调用Android native 方法
- */
-function _onPressListener() {
-    NativeModules.HomePageManager.sendEvent();
-}
-
 
 const HomeScreen = () => {
-    /**
-     * 注册监听
-     */
-    DeviceEventEmitter.addListener('EventName', function (params) {
+
+    const callback = (params) => {
         console.log('params:  ' + params.toString());
         let rest = NativeModules.HomePageManager.MESSAGE;//获取native常量
-
         NativeModules.HomePageManager.show('native常量： ' + rest + '  map: ' + params['key']);
-    });
+    };
+
+    const listener = DeviceEventEmitter.addListener('EventName', callback);
+
+    // listener.removeListener(listener);
     return (
         <View style={styles.root}>
-            <Text>Hello React Native Navigation 👋</Text>
+
+            <Text style={{color: 'red'}}>Hello React Native Navigation 👋</Text>
 
             <Button
                 uppercase={false}
@@ -63,11 +60,30 @@ const HomeScreen = () => {
     );
 };
 
+const testStyle = StyleSheet.create({
+    baseText: {
+        fontFamily: 'Cochin',
+    },
+    titleText: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#ff0000',
+    },
+});
+
 const HomeScreen2 = () => {
     return (
         <View style={styles.root}>
 
-            <Text>HomeScreen2</Text>
+            <BlinkApp/>
+
+            <Button
+                testId={'button'}
+                title='随机删除一条数据'
+                color='#710ce3'
+                onPress={() => {
+                    ToastAndroid.showWithGravity('你点击了', ToastAndroid.SHORT, ToastAndroid.CENTER);
+                }}/>
 
             <Icon name={'rocket'} color={'#ff0000'} size={20}/>
         </View>
@@ -78,7 +94,7 @@ const HomeScreen3 = () => {
     return (
         <View style={styles.root}>
 
-            <Text>HomeScreen3</Text>
+            <PropsText name={'James'} age={18} sex={'man'}/>
 
             <Icon name={'rocket'} color={'#ff0000'} size={20}/>
         </View>
@@ -132,14 +148,32 @@ HomeScreen3.options = {
 };
 
 const SettingsScreen = () => {
-    return (
-        <HomePageFragment style={{
-            width: '100%',
-            height: '100%',
-        }} bundle={'～～～初始化参数～～～'}/>
 
+    const callback = (params: Number) => {
+        // NativeModules.HomePageManager.show('你点击了第' + (params + 1) + '条');
+        ToastAndroid.showWithGravity('你点击了第' + (params + 1) + '条', ToastAndroid.SHORT, ToastAndroid.CENTER);
+    };
+    DeviceEventEmitter.addListener('ItemClick', callback);
+
+    return (
+        <HomePageFragment bundle={'～～～初始化参数～～～'}/>
     );
 };
+
+/**
+ * 随机删除一条数据
+ * @private
+ */
+function _deleteRandomIndexItem() {
+    NativeModules.HomePageManager.randomDelete();
+}
+
+/**
+ * 调用Android native 方法
+ */
+function _onPressListener() {
+    NativeModules.HomePageManager.sendEvent();
+}
 
 SettingsScreen.options = {
     topBar: {

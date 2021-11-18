@@ -10,7 +10,7 @@ const createFragment = (viewId, bundle) =>
         [viewId, bundle],
     );
 
-export const HomePageFragment = ({style, bundle}) => {
+export const HomePageFragment = ({style: style, bundle}) => {
     const ref = useRef(null);
     useEffect(() => {
         const viewId = findNodeHandle(ref.current);

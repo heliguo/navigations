@@ -2,7 +2,6 @@ package com.navigations.homepage;
 
 
 import android.app.Activity;
-import android.content.ComponentCallbacks;
 import android.content.ComponentCallbacks2;
 import android.content.Intent;
 import android.content.res.Configuration;
@@ -12,6 +11,8 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.example.fragmentlib.liveBus.LiveDataBus;
+import com.example.fragmentlib.liveBus.LiveDataBusKey;
 import com.facebook.react.bridge.ActivityEventListener;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Callback;
@@ -35,6 +36,7 @@ public class HomePageModule extends ReactContextBaseJavaModule {
     public HomePageModule(@Nullable ReactApplicationContext reactContext) {
         super(reactContext);
         assert reactContext != null;
+
         reactContext.addActivityEventListener(new ActivityEventListener() {
             @Override
             public void onActivityResult(Activity activity, int requestCode, int resultCode, Intent data) {
@@ -129,9 +131,16 @@ public class HomePageModule extends ReactContextBaseJavaModule {
      */
     @ReactMethod
     public void sendEvent() {
+
         WritableMap params = Arguments.createMap();
         params.putString("key", "value");
         getReactApplicationContext().getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
                 .emit("EventName", params);
     }
+
+    @ReactMethod
+    public void randomDelete() {
+        LiveDataBus.get().with(LiveDataBusKey.DELETE).postValue(null);
+    }
+
 }

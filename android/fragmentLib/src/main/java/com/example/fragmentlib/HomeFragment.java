@@ -15,6 +15,8 @@ import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 
 import com.example.fragmentlib.base.BaseFragment;
 import com.example.fragmentlib.common.RnRecyclerView;
+import com.example.fragmentlib.liveBus.LiveDataBus;
+import com.example.fragmentlib.liveBus.LiveDataBusKey;
 import com.scwang.smartrefresh.layout.SmartRefreshLayout;
 
 import java.util.ArrayList;
@@ -52,6 +54,10 @@ public class HomeFragment extends BaseFragment {
         list = new ArrayList<>();
         setWaterfallView();
         setRefreshListener();
+        LiveDataBus.get().with(LiveDataBusKey.DELETE).observe(this, o -> {
+            int random = new Random().nextInt(list.size());
+            showDelete(random);
+        });
     }
 
     private void setWaterfallView() {
@@ -65,21 +71,14 @@ public class HomeFragment extends BaseFragment {
         adapter.setOnItemClickListener(new StaggeredHomeAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(View view, int position) {
-                Toast.makeText(getActivity(), "点击第" + (position + 1) + "条", Toast.LENGTH_SHORT).show();
+                LiveDataBus.get().with(LiveDataBusKey.KEY, Integer.class).postValue(position);
 
             }
 
 
             @Override
             public void onItemLongClick(View view, final int position) {
-                new AlertDialog.Builder(getActivity())
-                        .setTitle("确认删除吗？")
-                        .setNegativeButton("取消", null)
-                        .setPositiveButton("确定", (dialogInterface, i) -> {
-                            list.remove(position);
-                            adapter.notifyDataSetChanged();//必须刷新数据
-                        })
-                        .show();
+                showDelete(position);
             }
         });
         recyclerView.setAdapter(adapter);
@@ -90,6 +89,17 @@ public class HomeFragment extends BaseFragment {
                 Toast.makeText(getActivity(), "～～～到底了～～～", Toast.LENGTH_SHORT).show();
         });
 
+    }
+
+    private void showDelete(int position) {
+        new AlertDialog.Builder(getActivity())
+                .setTitle(String.format("确认删除吗第%s条数据吗？", (position + 1)))
+                .setNegativeButton("取消", null)
+                .setPositiveButton("确定", (dialogInterface, i) -> {
+                    list.remove(position);
+                    adapter.notifyDataSetChanged();//必须刷新数据
+                })
+                .show();
     }
 
     private void loadData() {

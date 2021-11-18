@@ -23,6 +23,8 @@ import java.util.List;
 
 public class MainApplication extends NavigationApplication {
 
+    private static  MainApplication INSTANCE;
+
     private final ReactNativeHost mReactNativeHost =
             new ReactNativeHost(this) {
                 @Override
@@ -50,9 +52,14 @@ public class MainApplication extends NavigationApplication {
         return mReactNativeHost;
     }
 
+    public static MainApplication get(){
+        return INSTANCE;
+    }
+
     @Override
     public void onCreate() {
         super.onCreate();
+        INSTANCE = this;
         SoLoader.init(this, /* native exopackage */ false);
         initializeFlipper(this, getReactNativeHost().getReactInstanceManager());
         registerActivityLifecycleCallbacks(new ActivityLifecycleCallbacks() {

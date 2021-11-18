@@ -49,6 +49,7 @@ public class RnRecyclerView extends RecyclerView {
             return;
         }
         this.addOnScrollListener(new OnScrollListener() {
+
             @Override
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
@@ -57,11 +58,14 @@ public class RnRecyclerView extends RecyclerView {
                 int lastPositionMax = 0;
                 int itemCount = getAdapter().getItemCount();
                 if (layoutManager instanceof LinearLayoutManager) {
-                    lastPositionMax = lastPosition = ((LinearLayoutManager) layoutManager).findLastVisibleItemPosition();
+                    lastPositionMax = lastPosition = ((LinearLayoutManager) layoutManager).findLastCompletelyVisibleItemPosition();//完全到底
                 } else if (layoutManager instanceof StaggeredGridLayoutManager) {
-                    int[] positions = ((StaggeredGridLayoutManager) layoutManager).findLastVisibleItemPositions(null);
-                    lastPosition = Math.min(positions[0], positions[1]);
-                    lastPositionMax = Math.max(positions[0], positions[1]);
+                    int[] positions = ((StaggeredGridLayoutManager) layoutManager).findLastCompletelyVisibleItemPositions(null);//完全到底
+                    lastPosition = lastPosition(positions);
+                    lastPositionMax = maxLastPosition(positions);
+                }
+                if (lastPositionMax == -1 || lastPosition == -1) {
+                    return;
                 }
                 if (dy > 0 && lastPosition >= itemCount - 1 - count && count > 0 && lastPositionMax != itemCount - 1) {
                     moreListener.loadMore(false);
@@ -74,8 +78,36 @@ public class RnRecyclerView extends RecyclerView {
         });
     }
 
+    private int maxLastPosition(int[] pos) {
+        if (pos == null) {
+            return -1;
+        }
+        if (pos.length == 1) {
+            return pos[0];
+        }
+        int max = pos[0];
+        for (int i = 1; i < pos.length; i++) {
+            max = Math.max(max, pos[i]);
+        }
+        return max;
+    }
+
+    private int lastPosition(int[] pos) {
+        if (pos == null) {
+            return -1;
+        }
+        if (pos.length == 1) {
+            return pos[0];
+        }
+        int min = pos[0];
+        for (int i = 1; i < pos.length; i++) {
+            min = Math.min(min, pos[i]);
+        }
+        return min;
+    }
 
     public interface LoadMoreListener {
         void loadMore(boolean bottom);
     }
+
 }
