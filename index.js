@@ -132,6 +132,19 @@ HomeScreen2.options = {
     },
 };
 
+const SettingsScreen = () => {
+
+    const callback = (params: Number) => {
+        // NativeModules.HomePageManager.show('你点击了第' + (params + 1) + '条');
+        ToastAndroid.showWithGravity('你点击了第' + (params + 1) + '条', ToastAndroid.SHORT, ToastAndroid.CENTER);
+    };
+    DeviceEventEmitter.addListener('ItemClick', callback);
+
+    return (
+        <HomePageFragment bundle={'～～～初始化参数～～～'}/>
+    );
+};
+
 HomeScreen3.options = {
     topBar: {
         title: {
@@ -145,19 +158,6 @@ HomeScreen3.options = {
         textColor: '#E6E6E6',
         selectedTextColor: '#FF3C51',
     },
-};
-
-const SettingsScreen = () => {
-
-    const callback = (params: Number) => {
-        // NativeModules.HomePageManager.show('你点击了第' + (params + 1) + '条');
-        ToastAndroid.showWithGravity('你点击了第' + (params + 1) + '条', ToastAndroid.SHORT, ToastAndroid.CENTER);
-    };
-    DeviceEventEmitter.addListener('ItemClick', callback);
-
-    return (
-        <HomePageFragment bundle={'～～～初始化参数～～～'}/>
-    );
 };
 
 /**
