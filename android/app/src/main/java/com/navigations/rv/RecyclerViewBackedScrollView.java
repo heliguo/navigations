@@ -8,10 +8,12 @@ import android.view.ContextThemeWrapper;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.DefaultItemAnimator;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.LinearSmoothScroller;
 import androidx.recyclerview.widget.RecyclerView;
@@ -146,6 +148,7 @@ public class RecyclerViewBackedScrollView extends RecyclerView {
             mAdapter = adapter;
             mLastMeasuredHeight = 10;
             mLastMeasuredWidth = 10;
+            setClickable(true);
         }
 
         private final OnLayoutChangeListener mChildLayoutChangeListener = (v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
@@ -190,7 +193,18 @@ public class RecyclerViewBackedScrollView extends RecyclerView {
                 mLastMeasuredWidth = child.getMeasuredWidth();
                 mLastMeasuredHeight = child.getMeasuredHeight();
             }
-            setMeasuredDimension(mLastMeasuredWidth, mLastMeasuredHeight);
+            int spanCount = 1;
+            if (getParent() instanceof RecyclerViewBackedScrollView) {
+                RecyclerViewBackedScrollView parent = (RecyclerViewBackedScrollView) getParent();
+                LayoutManager layoutManager = parent.getLayoutManager();
+
+                if (layoutManager instanceof StaggeredGridLayoutManager) {
+                    spanCount = ((StaggeredGridLayoutManager) layoutManager).getSpanCount();
+                } else if (layoutManager instanceof GridLayoutManager) {
+                    spanCount = ((GridLayoutManager) layoutManager).getSpanCount();
+                }
+            }
+            setMeasuredDimension(mLastMeasuredWidth / spanCount, mLastMeasuredHeight);
         }
 
         public ReactListAdapter getAdapter() {
@@ -245,13 +259,21 @@ public class RecyclerViewBackedScrollView extends RecyclerView {
         @Override
         public void onBindViewHolder(ConcreteViewHolder holder, int position) {
             RecyclableWrapperViewGroup vg = (RecyclableWrapperViewGroup) holder.itemView;
+            final int p = position + 1;
             View row = getViewByItemIndex(position);
             if (row != null && row.getParent() != vg) {
                 if (row.getParent() != null) {
                     ((ViewGroup) row.getParent()).removeView(row);
                 }
                 vg.addView(row, 0);
+                row.setOnClickListener(new OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Toast.makeText(row.getContext(), String.format("Native Toast : The position you clicked is %d", p), Toast.LENGTH_SHORT).show();
+                    }
+                });
             }
+
         }
 
         @Override
@@ -314,7 +336,8 @@ public class RecyclerViewBackedScrollView extends RecyclerView {
         if (layoutManager instanceof LinearLayoutManager) {
             ((LinearLayoutManager) layoutManager).findFirstVisibleItemPosition();
         } else if (layoutManager instanceof StaggeredGridLayoutManager) {
-            lastIndex = ((LinearLayoutManager) getLayoutManager()).findLastVisibleItemPosition();
+            int[] pos = ((StaggeredGridLayoutManager) getLayoutManager()).findLastVisibleItemPositions(null);
+            lastIndex = maxLastPosition(pos);
         }
         if (firstIndex != mFirstVisibleIndex || lastIndex != mLastVisibleIndex) {
             nativeModule.getEventDispatcher()

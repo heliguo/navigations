@@ -194,7 +194,7 @@ RV.options = {
         },
     },
     bottomTab: {
-        text: '原生RecyclerView',
+        text: 'RecyclerView',
         textColor: '#E6E6E6',
         selectedTextColor: '#FF3C51',
     },

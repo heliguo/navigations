@@ -4,7 +4,7 @@
  */
 
 import React, {Component} from 'react';
-import {Button, Image, StyleSheet, Text, ToastAndroid, TouchableNativeFeedback, View} from 'react-native';
+import {Image, StyleSheet, Text, View} from 'react-native';
 
 import RNRecyclerView from './rv/RNRecyclerView';
 import DataSource from './rv/DataSource';
@@ -21,7 +21,7 @@ function newItem() {
 export default class RNRecyclerViewTest extends Component {
     constructor(props) {
         super(props);
-        const data = Array(10).fill().map((e, i) => newItem());
+        const data = Array(100).fill().map((e, i) => newItem());
 
         this.state = {
             dataSource: new DataSource(data, (item, index) => item.id),
@@ -34,36 +34,35 @@ export default class RNRecyclerViewTest extends Component {
 
         return (
             <View style={styles.container}>
-                {this.renderTopControlPanel()}
                 <RNRecyclerView
-                    layoutManager={[100]}
+                    layoutManager={[102, 2]}
                     ref={(component) => this._recycler = component}
                     style={{flex: 1}}
                     dataSource={dataSource}
                     renderItem={this.renderItem}
-                    windowSize={20}
-                    initialScrollIndex={0}
-                    inverted={inverted}
-                    ListHeaderComponent={(
-                        <View style={{paddingTop: 15, backgroundColor: '#eee'}}/>
-                    )}
-                    ListFooterComponent={(
-                        <View style={{paddingTop: 15, backgroundColor: '#aaa'}}/>
-                    )}
-                    ListEmptyComponent={(
-                        <View style={{borderColor: '#e7e7e7', borderWidth: 1, margin: 10, padding: 20}}>
-                            <Text style={{fontSize: 15}}>No results.</Text>
-                        </View>
-                    )}
-                    ItemSeparatorComponent={(
-                        <View style={{
-                            borderBottomWidth: 1,
-                            borderColor: '#e7e7e7',
-                            marginHorizontal: 5,
-                            marginVertical: 10,
-                        }}/>
-                    )} />
-                {this.renderBottomControlPanel()}
+                    // windowSize={20}
+                    // initialScrollIndex={0}
+                    // inverted={inverted}
+                    // ListHeaderComponent={(
+                    //     <View style={{paddingTop: 15, backgroundColor: '#eee'}}/>
+                    // )}
+                    // ListFooterComponent={(
+                    //     <View style={{paddingTop: 15, backgroundColor: '#aaa'}}/>
+                    // )}
+                    // ListEmptyComponent={(
+                    //     <View style={{borderColor: '#e7e7e7', borderWidth: 1, margin: 10, padding: 20}}>
+                    //         <Text style={{fontSize: 15}}>No results.</Text>
+                    //     </View>
+                    // )}
+                    // ItemSeparatorComponent={(
+                    //     <View style={{
+                    //         borderBottomWidth: 1,
+                    //         borderColor: '#e7e7e7',
+                    //         marginHorizontal: 5,
+                    //         marginVertical: 5,
+                    //     }}/>
+                    // )}
+                />
             </View>
         );
     }
@@ -78,79 +77,10 @@ export default class RNRecyclerViewTest extends Component {
                 onMoveUp={() => this.moveUp(index)}
                 onMoveDown={() => this.moveDown(index)}
                 onAddBelow={() => this.addBelow(index)}
-                onIncrementCounter={() => this.incrementCounter(index)}/>
+                onIncrementCounter={() => this.incrementCounter(index)}
+                dataSource={this.state.dataSource}/>
         );
     };
-
-    renderTopControlPanel() {
-        return (
-            <View style={{
-                flexDirection: 'row',
-                padding: 5,
-                zIndex: 10,
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: '#e7e7e7',
-            }}>
-                <Button
-                    title={'\u002B40 \u25B2'}
-                    onPress={() => this.addToTop(40)}/>
-                <View style={{width: 5}}/>
-                <Button
-                    title={'\u002B40 \u25BC'}
-                    onPress={() => this.addToBottom(40)}/>
-                <View style={{width: 15}}/>
-                <Text>Scroll:</Text>
-                <View style={{width: 5}}/>
-                <Button
-                    title={'\u25B2'}
-                    onPress={() => this._recycler && this._recycler.scrollToIndex({index: 0, animated: true})}/>
-                <View style={{width: 5}}/>
-                <Button
-                    title={'\u25BC'}
-                    onPress={() => this._recycler && this._recycler.scrollToEnd()}/>
-                <View style={{width: 5}}/>
-                <Button
-                    title={'rand'}
-                    onPress={() => {
-                        const index = Math.floor((Math.random() * this.state.dataSource.size()));
-                        const item = this.state.dataSource.get(index);
-                        this._recycler && this._recycler.scrollToIndex({index, animated: false});
-                        ToastAndroid.show('Scrolled to item: ' + item.id, ToastAndroid.SHORT);
-                    }}/>
-                <View style={{width: 5}}/>
-                <Button
-                    title={'inv'}
-                    onPress={() => {
-                        this.setState({inverted: !this.state.inverted});
-                    }}/>
-            </View>
-        );
-    }
-
-    renderBottomControlPanel() {
-        return (
-            <View style={{
-                flexDirection: 'row',
-                padding: 5,
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: '#e7e7e7',
-            }}>
-                <Button
-                    title={'Reset'}
-                    onPress={() => this.reset()}/>
-            </View>
-        );
-    }
-
-    reset() {
-        //_gCounter = 1;
-        const data = Array(10).fill().map((e, i) => newItem());
-        this.setState({
-            dataSource: new DataSource(data, (item, index) => item.id),
-        });
-    }
 
     remove(index) {
         this.state.dataSource.splice(index, 1);
@@ -202,57 +132,46 @@ export default class RNRecyclerViewTest extends Component {
 
 class Item extends Component {
     render() {
-        const {item, index, onRemove, onAddAbove, onAddBelow, onMoveUp, onMoveDown, onIncrementCounter} = this.props;
+        const {item, index, onRemove, onAddAbove, onAddBelow, onMoveUp, onMoveDown, onIncrementCounter, dataSource} = this.props;
         const {id, counter} = item;
-        const imageSize = 70 + id % 70;
+        const imageWidth = 70;
+        const imageHeight = 70 + (index % 5 === 2 ? 20 : 0);
 
         return (
-            <TouchableNativeFeedback
-                onPress={onIncrementCounter}>
-                <View style={{flexDirection: 'row', alignItems: 'center', marginHorizontal: 5}}>
-                    <Image
-                        source={{uri: 'http://loremflickr.com/320/240?t=' + (id % 9)}}
-                        style={{
-                            width: imageSize,
-                            height: imageSize,
-                            marginRight: 10,
-                        }}/>
-                    <View style={{flex: 1}}>
-                        <Text style={{
-                            fontSize: 16,
-                            color: 'black',
-                        }}>Item #{id}</Text>
-                        <Text style={{
-                            fontSize: 13,
-                            color: '#888',
-                        }}>Touch to count {counter ?
-                            <Text style={{fontWeight: 'bold', color: 'black'}}>{counter}</Text>
-                            : null}</Text>
-                    </View>
-                    <View style={{flexDirection: 'row'}}>
-                        <Button
-                            title={'\u25B2'}
-                            onPress={onMoveUp}/>
-                        <View style={{width: 5}}/>
-                        <Button
-                            title={'\u25BC'}
-                            onPress={onMoveDown}/>
-                        <View style={{width: 5}}/>
-                        <Button
-                            title={'\u002B\u25B2'}
-                            onPress={onAddAbove}/>
-                        <View style={{width: 5}}/>
-                        <Button
-                            title={'\u002B\u25BC'}
-                            onPress={onAddBelow}/>
-                        <View style={{width: 5}}/>
-                        <Button
-                            color="red"
-                            title={' X '}
-                            onPress={onRemove}/>
-                    </View>
+            // <TouchableNativeFeedback
+            //     onPress={onIncrementCounter}>
+            <View style={{flexDirection: 'row', alignItems: 'center', marginHorizontal: 5, marginVertical: 5}}>
+                <Image
+                    source={{uri: 'http://loremflickr.com/320/240?t=' + (id % 9)}}
+                    style={{
+                        width: imageWidth,
+                        height: imageHeight,
+                        marginRight: 10,
+                    }}/>
+                <View style={{flex: 1}}>
+                    <Text style={{
+                        fontSize: 16,
+                        color: 'black',
+                    }}>Item #{id}</Text>
+                    <Text style={{
+                        fontSize: 14,
+                        color: 'black',
+                    }}>total size:{dataSource.size()}</Text>
+                    <Text style={{
+                        fontSize: 13,
+                        color: '#888',
+                    }}>count {counter ?
+                        <Text style={{fontWeight: 'bold', color: 'black'}}>{counter}</Text>
+                        : null}</Text>
                 </View>
-            </TouchableNativeFeedback>
+                <View style={{
+                    borderBottomWidth: 1,
+                    borderColor: '#e7e7e7',
+                    marginHorizontal: 5,
+                    marginVertical: 5,
+                }}/>
+            </View>
+            // </TouchableNativeFeedback>
         );
     }
 }

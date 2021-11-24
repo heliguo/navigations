@@ -185,7 +185,7 @@ class RNRecyclerView extends PureComponent {
         }
 
         if (itemCount > 0) {
-            for (let i = itemRangeToRender[0]; i < itemRangeToRender[1]; i++) {
+            for (let i = 0; i < itemCount; i++) {
                 let item = dataSource.get(i);
                 let itemKey = dataSource.getKey(item, i);
                 let shouldUpdate = this._needsItemUpdate(itemKey);
