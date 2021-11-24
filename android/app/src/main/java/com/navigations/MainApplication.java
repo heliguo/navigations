@@ -16,6 +16,9 @@ import com.facebook.react.ReactInstanceManager;
 import com.facebook.react.ReactNativeHost;
 import com.facebook.react.ReactPackage;
 import com.facebook.soloader.SoLoader;
+import com.navigations.common.CommonPackage;
+import com.navigations.homepage.HomePackage;
+import com.navigations.rv.RNRecyclerviewPackage;
 import com.reactnativenavigation.NavigationApplication;
 
 import java.lang.reflect.InvocationTargetException;
@@ -37,7 +40,9 @@ public class MainApplication extends NavigationApplication {
                     @SuppressWarnings("UnnecessaryLocalVariable")
                     List<ReactPackage> packages = new PackageList(this).getPackages();
                     // Packages that cannot be autolinked yet can be added manually here, for example:
-                     packages.add(new MainPackage());
+                     packages.add(new HomePackage());
+                     packages.add(new CommonPackage());
+                     packages.add(new RNRecyclerviewPackage());
                     return packages;
                 }
 

@@ -5224,7 +5224,7 @@ prompts@^2.0.1, prompts@^2.4.0:
     kleur "^3.0.3"
     sisteransi "^1.0.5"
 
-prop-types@15.x.x, prop-types@^15.7.2:
+prop-types@15.x.x, prop-types@^15.6.0, prop-types@^15.7.2, prop-types@latest:
   version "15.7.2"
   resolved "https://registry.yarnpkg.com/prop-types/-/prop-types-15.7.2.tgz#52c41e75b8c87e72b9d9360e0206b99dcbffa6c5"
   integrity sha512-8QQikdH7//R2vurIJSutZ1smHYTcLpRWEOlHnzcWHmBYrOGUysKwSsrC89BCiFj3CbrfJ/nXFdJepOVrY1GCHQ==
@@ -5298,6 +5298,13 @@ react-native-navigation@^7.23.1-hotfix.1:
     prop-types "15.x.x"
     react-lifecycles-compat "2.0.0"
     tslib "1.9.3"
+
+react-native-recyclerview-list@^0.3.4:
+  version "0.3.4"
+  resolved "https://registry.yarnpkg.com/react-native-recyclerview-list/-/react-native-recyclerview-list-0.3.4.tgz#8e2e6c2ff9b745665f66b152e5126388a572087b"
+  integrity sha512-WC822Nid9T8zHlqKsEUE+VvWKWwxQEJN9aiHP/G1qyUcIrNnYHoKYyfAYSmqc+rjA9eEsg1zHHSxHm5+L/Wd+A==
+  dependencies:
+    prop-types "^15.6.0"
 
 react-native-vector-icons@^9.0.0:
   version "9.0.0"

@@ -1,5 +1,4 @@
-package com.navigations.homepage;
-
+package com.navigations.common;
 
 import android.app.Activity;
 import android.content.ComponentCallbacks2;
@@ -12,31 +11,30 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.example.fragmentlib.liveBus.LiveDataBus;
-import com.example.fragmentlib.liveBus.LiveDataBusKey;
 import com.facebook.react.bridge.ActivityEventListener;
-import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.LifecycleEventListener;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
-import com.facebook.react.bridge.WritableMap;
-import com.facebook.react.modules.core.DeviceEventManagerModule;
 
 import java.util.HashMap;
 import java.util.Map;
 
-
-public class HomePageModule extends ReactContextBaseJavaModule {
+/**
+ * 通用的Module 提供通用方法调用
+ */
+public class CommonModule extends ReactContextBaseJavaModule {
 
     private static final String MESSAGE = "MESSAGE";
 
+    private final ReactApplicationContext reactContext;
 
-    public HomePageModule(@Nullable ReactApplicationContext reactContext) {
+    public CommonModule(@Nullable ReactApplicationContext reactContext) {
         super(reactContext);
+        this.reactContext = reactContext;
         assert reactContext != null;
-
         reactContext.addActivityEventListener(new ActivityEventListener() {
             @Override
             public void onActivityResult(Activity activity, int requestCode, int resultCode, Intent data) {
@@ -82,6 +80,18 @@ public class HomePageModule extends ReactContextBaseJavaModule {
         });
     }
 
+    @NonNull
+    @Override
+    public String getName() {
+        return "CommonModule";
+    }
+
+    /**
+     * 示例
+     * RN 可以直接获取MESSAGE 对应的value
+     *
+     * @return map
+     */
     @Nullable
     @Override
     public Map<String, Object> getConstants() {
@@ -90,57 +100,53 @@ public class HomePageModule extends ReactContextBaseJavaModule {
         return map;
     }
 
-    @NonNull
-    @Override
-    public String getName() {
-        return HomePageManager.HOME_PAGE_FRAGMENT;
-    }
-
-
+    /**
+     * 调用Android端log
+     */
     @ReactMethod
     public void log(String msg) {
-        Log.e("TAG", "log: " + msg);
+        Log.e("CommonModule", "native log : " + msg);
     }
 
+    /**
+     * 调用Android端Toast
+     */
     @ReactMethod
     public void show(String msg) {
         Toast.makeText(getReactApplicationContext(), msg, Toast.LENGTH_SHORT).show();
     }
 
     /**
+     * 示例
      * callback 机制
      */
     @ReactMethod
     public void testAndroidCallback(String msg, Callback callback) {
-        Log.e("TAG", "testAndroidCallback: " + msg);
         if ("1".equals(msg))
             callback.invoke("是的，登陆成功了");
     }
 
     /**
+     * 示例
      * promise 机制
      */
     @ReactMethod
     public void testAndroidPromise(String msg, Promise promise) {
         if ("2".equals(msg))
             promise.resolve("Promise");//正常执行
+        else
+            promise.reject("errorCode", "errorMsg");//错误
     }
 
     /**
-     * 发送事件,js注册监听
+     * 使用LiveDataBus向Native发送事件
+     *
+     * @param key 事件key（唯一标示）
+     * @param obj 发送的数据
      */
     @ReactMethod
-    public void sendEvent() {
-
-        WritableMap params = Arguments.createMap();
-        params.putString("key", "value");
-        getReactApplicationContext().getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
-                .emit("EventName", params);
-    }
-
-    @ReactMethod
-    public void randomDelete() {
-        LiveDataBus.get().with(LiveDataBusKey.DELETE).postValue(null);
+    public void postEvent(String key, Object obj) {
+        LiveDataBus.get().with(key).postValue(obj);
     }
 
 }

@@ -5,6 +5,8 @@ import {HomePageFragment} from './src/HomePageFragment';
 import Icon from 'react-native-vector-icons/FontAwesome5';
 import PropsText from './src/PropsText';
 import BlinkApp from './src/BlinkApp';
+import NativeUIManager from 'react-native/Libraries/ReactNative/NativeUIManager';
+import RNRecyclerViewTest from './src/RNRecyclerViewTest';
 
 
 const LoginScreen = () => {
@@ -18,12 +20,12 @@ const LoginScreen = () => {
                 onPress={() => {
                     Navigation.setRoot(mainRoot);
 
-                    NativeModules.HomePageManager.testAndroidCallback('1', (result) => {
-                        NativeModules.HomePageManager.show(result);
+                    NativeModules.CommonModule.testAndroidCallback('1', (result) => {
+                        NativeModules.CommonModule.show(result);
                     });
 
-                    NativeModules.HomePageManager.testAndroidPromise('2').then((result) => {
-                        NativeModules.HomePageManager.show(result);
+                    NativeModules.CommonModule.testAndroidPromise('2').then((result) => {
+                        NativeModules.CommonModule.show(result);
                     });
                 }}
             />
@@ -33,16 +35,6 @@ const LoginScreen = () => {
 
 
 const HomeScreen = () => {
-
-    const callback = (params) => {
-        console.log('params:  ' + params.toString());
-        let rest = NativeModules.HomePageManager.MESSAGE;//获取native常量
-        NativeModules.HomePageManager.show('native常量： ' + rest + '  map: ' + params['key']);
-    };
-
-    const listener = DeviceEventEmitter.addListener('EventName', callback);
-
-    // listener.removeListener(listener);
     return (
         <View style={styles.root}>
 
@@ -135,8 +127,7 @@ HomeScreen2.options = {
 const SettingsScreen = () => {
 
     const callback = (params: Number) => {
-        // NativeModules.HomePageManager.show('你点击了第' + (params + 1) + '条');
-        ToastAndroid.showWithGravity('你点击了第' + (params + 1) + '条', ToastAndroid.SHORT, ToastAndroid.CENTER);
+        ToastAndroid.showWithGravity('~~RN Toast~~你点击了第' + (params + 1) + '条', ToastAndroid.SHORT, ToastAndroid.CENTER);
     };
     DeviceEventEmitter.addListener('ItemClick', callback);
 
@@ -161,18 +152,12 @@ HomeScreen3.options = {
 };
 
 /**
- * 随机删除一条数据
- * @private
- */
-function _deleteRandomIndexItem() {
-    NativeModules.HomePageManager.randomDelete();
-}
-
-/**
  * 调用Android native 方法
  */
 function _onPressListener() {
-    NativeModules.HomePageManager.sendEvent();
+    let rest = NativeModules.CommonModule['MESSAGE'];//获取native常量
+    let rests = NativeUIManager.HomePageManager.test;//获取native常量
+    NativeModules.CommonModule.show('~~~~android toast~~~~' + rest + rests);
 }
 
 SettingsScreen.options = {
@@ -194,7 +179,26 @@ Navigation.registerComponent('Home', () => HomeScreen);
 Navigation.registerComponent('Settings', () => SettingsScreen);
 Navigation.registerComponent('Home2', () => HomeScreen2);
 Navigation.registerComponent('Home3', () => HomeScreen3);
+Navigation.registerComponent('RV', () => RV);
 
+
+const RV = () => {
+    return (
+        <RNRecyclerViewTest/>
+    );
+};
+RV.options = {
+    topBar: {
+        title: {
+            text: '原生RecyclerView',
+        },
+    },
+    bottomTab: {
+        text: '原生RecyclerView',
+        textColor: '#E6E6E6',
+        selectedTextColor: '#FF3C51',
+    },
+};
 
 Navigation.setDefaultOptions({
     statusBar: {
@@ -246,7 +250,7 @@ const mainRoot = {
                         children: [
                             {
                                 component: {
-                                    name: 'Home3',
+                                    name: 'RV',
                                 },
                             },
                         ],
@@ -274,20 +278,20 @@ Navigation.events().registerAppLaunchedListener(async () => {
 });
 
 Navigation.events().registerComponentWillAppearListener((event) => {
-        NativeModules.HomePageManager.log('Appear:     componentName:' + event.componentName + '  componentType:' + event.componentType +
+        NativeModules.CommonModule.log('Appear:     componentName:' + event.componentName + '  componentType:' + event.componentType +
             '  componentId:' + event.componentId +
             '  passProps:' + event.passProps.toString());
     },
 );
 
 Navigation.events().registerComponentDidDisappearListener((event) => {
-        NativeModules.HomePageManager.log('DidAppear:     componentName:' + event.componentName + '  componentType:' + event.componentType +
+        NativeModules.CommonModule.log('DidAppear:     componentName:' + event.componentName + '  componentType:' + event.componentType +
             '  componentId:' + event.componentId);
     },
 );
 
 Navigation.events().registerBottomTabSelectedListener(({selectedTabIndex}) => {
-    NativeModules.HomePageManager.log('BottomTabSelected:   selectedTabIndex:' + selectedTabIndex);
+    NativeModules.CommonModule.log('BottomTabSelected:   selectedTabIndex:' + selectedTabIndex);
 });
 
 

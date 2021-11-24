@@ -39,6 +39,13 @@ public class HomePageManager extends ViewGroupManager<FrameLayout> {
         return HOME_PAGE_FRAGMENT;
     }
 
+
+    @Nullable
+    @Override
+    public Map<String, Object> getConstants() {
+        return MapBuilder.of("test",2);
+    }
+
     @NonNull
     @Override
     protected FrameLayout createViewInstance(@NonNull ThemedReactContext reactContext) {
