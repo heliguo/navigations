@@ -1,10 +1,5 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- */
-
 import React, {Component} from 'react';
-import {Image, StyleSheet, Text, View} from 'react-native';
+import {Button, Image, NativeModules, StyleSheet, Text, View} from 'react-native';
 
 import RNRecyclerView from './rv/RNRecyclerView';
 import DataSource from './rv/DataSource';
@@ -18,6 +13,9 @@ function newItem() {
     };
 }
 
+/**
+ * the example of RNRecyclerView
+ */
 export default class RNRecyclerViewTest extends Component {
     constructor(props) {
         super(props);
@@ -30,19 +28,37 @@ export default class RNRecyclerViewTest extends Component {
     }
 
     render() {
-        const {dataSource, inverted} = this.state;
+        const {dataSource} = this.state;
 
         return (
             <View style={styles.container}>
+                {/*<TouchableNativeFeedback*/}
+                {/*    onPress={()=>this.addToBottom(20)}>*/}
+                {/*    <View style={{*/}
+                {/*        borderBottomWidth: 0,*/}
+                {/*        borderColor: '#e7e7e7',*/}
+                {/*        marginHorizontal: 5,*/}
+                {/*        marginVertical: 5,*/}
+                {/*    }}>*/}
+                {/*        <Text style={{*/}
+                {/*            fontSize: 14,*/}
+                {/*            color: 'black',*/}
+                {/*        }}>加载20条数据</Text>*/}
+                {/*    </View>*/}
+                {/*</TouchableNativeFeedback>*/}
+
+                {this.renderTopControlPanel()}
+
                 <RNRecyclerView
-                    layoutManager={[102, 2]}
+                    layoutManager={[102, 2, 4]}
+                    onBottom={this.onBottom}
+                    onLoadMore={this.onLoadMore}
+                    onTop={this.onTop}
                     ref={(component) => this._recycler = component}
                     style={{flex: 1}}
                     dataSource={dataSource}
                     renderItem={this.renderItem}
-                    // windowSize={20}
-                    // initialScrollIndex={0}
-                    // inverted={inverted}
+
                     // ListHeaderComponent={(
                     //     <View style={{paddingTop: 15, backgroundColor: '#eee'}}/>
                     // )}
@@ -82,6 +98,68 @@ export default class RNRecyclerViewTest extends Component {
         );
     };
 
+    renderTopControlPanel() {
+        return (
+            <View style={{
+                flexDirection: 'row',
+                padding: 5,
+                zIndex: 10,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: '#e7e7e7',
+            }}>
+                <Button
+                    title={'加载20条'}
+                    onPress={() => this.addToBottom(20)}/>
+                <View style={{width: 10}}/>
+                <Button
+                    title={'重新加载30条'}
+                    onPress={() => this.reset(30)}/>
+
+                <View style={{width: 10}}/>
+                <Button
+                    title={'滚动到顶'}
+                    onPress={() => this.toTop()}/>
+
+                <View style={{width: 10}}/>
+                <Button
+                    title={'滚动到底'}
+                    onPress={() => this.toBottom()}/>
+            </View>
+        );
+    }
+
+    onBottom() {
+        NativeModules.CommonModule.show('~~~~到底了~~~~');
+    }
+
+    onLoadMore() {
+        NativeModules.CommonModule.show('~~~~加载更多~~~~');
+    }
+
+    onTop() {
+
+    }
+
+    reset(size) {
+        // this._recycler.scrollToTop();
+        const data = Array(size).fill().map((e, i) => newItem());
+        this._recycler._setLayoutManager([102, 2, 4]);//重新设置layoutManager可解决刷新问题
+        // this.state.dataSource.splice(0, this.state.dataSource.size(), ...data);
+        this.setState({
+            dataSource: new DataSource(data, (item, i) => item.id),
+        });
+    }
+
+    toTop() {
+        this._recycler.scrollToTop();
+    }
+
+    toBottom() {
+        this._recycler.scrollToBottom();
+    }
+
+
     remove(index) {
         this.state.dataSource.splice(index, 1);
     }
@@ -104,7 +182,7 @@ export default class RNRecyclerViewTest extends Component {
     }
 
     incrementCounter(index) {
-        var item = this.state.dataSource.get(index);
+        let item = this.state.dataSource.get(index);
         item.counter++;
         this.state.dataSource.set(index, item);
     }

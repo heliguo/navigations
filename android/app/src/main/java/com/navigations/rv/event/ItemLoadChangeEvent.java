@@ -1,5 +1,6 @@
 package com.navigations.rv.event;
 
+import com.facebook.react.bridge.Arguments;
 import com.facebook.react.uimanager.events.Event;
 import com.facebook.react.uimanager.events.RCTEventEmitter;
 
@@ -8,7 +9,11 @@ import com.facebook.react.uimanager.events.RCTEventEmitter;
  */
 public class ItemLoadChangeEvent extends Event<ItemLoadChangeEvent> {
 
-    public static final String EVENT_LOAD_MORE = "EVENT_LOAD_MORE";
+    public static final String EVENT_LOAD_MORE = "loadMore";
+
+    public ItemLoadChangeEvent(int viewTag){
+        super(viewTag);
+    }
 
     @Override
     public String getEventName() {
@@ -17,6 +22,6 @@ public class ItemLoadChangeEvent extends Event<ItemLoadChangeEvent> {
 
     @Override
     public void dispatch(RCTEventEmitter rctEventEmitter) {
-        rctEventEmitter.receiveEvent(getViewTag(), EVENT_LOAD_MORE, null);
+        rctEventEmitter.receiveEvent(getViewTag(), EVENT_LOAD_MORE, Arguments.createMap());
     }
 }

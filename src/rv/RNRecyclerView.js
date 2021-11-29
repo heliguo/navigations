@@ -5,37 +5,28 @@ import DataSource from './DataSource';
 import RecyclerViewItem from './RcyclerViewItem';
 
 
-class RNRecyclerView extends PureComponent {
+export class RNRecyclerView extends PureComponent {
     static propTypes = {
-        layoutManager:PropTypes.array.isRequired,
+        layoutManager: PropTypes.array.isRequired,
         ...View.propTypes,
         renderItem: PropTypes.func,
         dataSource: PropTypes.instanceOf(DataSource),
-        windowSize: PropTypes.number,
-        initialListSize: PropTypes.number,
-        initialScrollIndex: PropTypes.number,
-        initialScrollOffset: PropTypes.number,
-        initialScrollPosition: PropTypes.number,
-        inverted: PropTypes.bool,
-        itemAnimatorEnabled: PropTypes.bool,
         ListHeaderComponent: PropTypes.element,//头
         ListFooterComponent: PropTypes.element,//尾
         ListEmptyComponent: PropTypes.element,//空
         ItemSeparatorComponent: PropTypes.element,//分割
-        onVisibleItemsChange: PropTypes.func,
-        refreshControl: PropTypes.object,
+        onBottom: PropTypes.func,//滑动到底
+        onLoadMore: PropTypes.func,//可用于加载更多回调
+        onTop: PropTypes.func,
     };
 
     static defaultProps = {
         dataSource: new DataSource([], (item, i) => i),
-        initialListSize: 10,
-        windowSize: 30,
-        inverted: false,
-        itemAnimatorEnabled: true,
     };
 
 
     _dataSourceListener = {
+
         onUnshift: () => {
             this._notifyItemRangeInserted(0, 1);
             this._shouldUpdateAll = true;
@@ -75,27 +66,19 @@ class RNRecyclerView extends PureComponent {
         onSetDirty: () => {
             this._shouldUpdateAll = true;
             this.forceUpdate();
-        }
+        },
     };
 
     constructor(props) {
         super(props);
         const {
             dataSource,//数据
-            initialListSize,//初始化大小
-            initialScrollIndex//定位index
         } = this.props;
 
         dataSource._addListener(this._dataSourceListener);
 
-        let visibleRange = initialScrollIndex >= 0 ?
-            [initialScrollIndex, initialScrollIndex + initialListSize]
-            : [0, initialListSize];
-
         this.state = {
-            firstVisibleIndex: visibleRange[0],
-            lastVisibleIndex: visibleRange[1],
-            itemCount: dataSource.size()
+            itemCount: dataSource.size(),
         };
 
         this._shouldUpdateAll = true;
@@ -114,21 +97,7 @@ class RNRecyclerView extends PureComponent {
     }
 
     componentDidMount() {
-        const {initialScrollIndex, initialScrollOffset, initialScrollPosition} = this.props;
         this.mounted = true;
-        if (initialScrollIndex) {
-            setTimeout(() => {
-                this.scrollToIndex({
-                    animated: false,
-                    index: initialScrollIndex,
-                    viewPosition: initialScrollPosition,
-                    viewOffset: initialScrollOffset
-                });
-            }, 0);
-        }
-
-        this._shouldUpdateAll = false;
-        this._shouldUpdateKeys = [];
     }
 
     componentWillReceiveProps(nextProps) {
@@ -154,17 +123,13 @@ class RNRecyclerView extends PureComponent {
             ListFooterComponent,
             ListEmptyComponent,
             ItemSeparatorComponent,
-            inverted,
-            refreshControl,
             ...rest
         } = this.props;
 
         const itemCount = dataSource.size();
-        const end = itemCount - 1;
         let stateItemCount = this.state.itemCount;
 
         let body = [];//item集合
-        let itemRangeToRender = this._calcItemRangeToRender(this.state.firstVisibleIndex, this.state.lastVisibleIndex);
 
         if (ListHeaderComponent) {
             var headerElement = React.isValidElement(ListHeaderComponent)
@@ -189,11 +154,6 @@ class RNRecyclerView extends PureComponent {
                 let item = dataSource.get(i);
                 let itemKey = dataSource.getKey(item, i);
                 let shouldUpdate = this._needsItemUpdate(itemKey);
-                let isFirst = i === 0;
-                let isLast = i === end;
-                let header = inverted ? (isLast && footerElement) : (isFirst && headerElement);
-                let footer = inverted ? (isFirst && headerElement) : (isLast && footerElement);
-                let separator = inverted ? (!isFirst && separatorElement) : (!isLast && separatorElement);
                 body.push(
                     <RecyclerViewItem
                         key={itemKey}
@@ -202,9 +162,9 @@ class RNRecyclerView extends PureComponent {
                         shouldUpdate={shouldUpdate}
                         dataSource={dataSource}
                         renderItem={renderItem}
-                        header={header}
-                        separator={separator}
-                        footer={footer}/>
+                        header={headerElement}
+                        separator={separatorElement}
+                        footer={footerElement}/>,
                 );
             }
         } else if (ListEmptyComponent) {
@@ -221,7 +181,7 @@ class RNRecyclerView extends PureComponent {
                     dataSource={dataSource}
                     renderItem={() => emptyElement}
                     header={headerElement}
-                    footer={footerElement}/>
+                    footer={footerElement}/>,
             );
 
             stateItemCount = 1;
@@ -230,14 +190,36 @@ class RNRecyclerView extends PureComponent {
         return (
             <NativeRecyclerView
                 layoutManager={layoutManager}
+                onBottom={this._onBottom}
+                onLoadMore={this._onLoadMore}
+                onTop={this._onTop}
                 {...rest}
-                itemCount={stateItemCount}
-                onVisibleItemsChange={this._handleVisibleItemsChange}
-                inverted={inverted}>
+                itemCount={stateItemCount}>
                 {body}
             </NativeRecyclerView>
         );
     }
+
+    _onBottom = () => {
+        const {onBottom} = this.props;
+        if (onBottom) {
+            onBottom();
+        }
+    };
+
+    _onLoadMore = () => {
+        const {onLoadMore} = this.props;
+        if (onLoadMore) {
+            onLoadMore();
+        }
+    };
+
+    _onTop = () => {
+        const {onTop} = this.props;
+        if (onTop) {
+            onTop();
+        }
+    };
 
     setLocalState = (state, callback) => {
         if (this.mounted) {
@@ -245,68 +227,39 @@ class RNRecyclerView extends PureComponent {
         }
     };
 
-    scrollToEnd({animated = true, velocity} = {}) {
+    scrollToTop({animated = true, velocity} = {}) {
+        this.scrollToIndex({
+            index: 0,
+            animated,
+            velocity,
+        });
+    }
+
+    scrollToBottom({animated = true, velocity} = {}) {
         this.scrollToIndex({
             index: this.props.dataSource.size() - 1,
             animated,
-            velocity
+            velocity,
         });
     }
 
     scrollToIndex = ({animated = true, index, velocity, viewPosition, viewOffset}) => {
-        index = Math.max(0, Math.min(index, this.props.dataSource.size() - 1));
+        UIManager.dispatchViewManagerCommand(
+            ReactNative.findNodeHandle(this),
+            UIManager.AndroidRecyclerViewBackedScrollView.Commands.scrollToIndex.toString(),
+            [animated, index, velocity, viewPosition, viewOffset],
+        );
 
-        if (animated) {
-            UIManager.dispatchViewManagerCommand(
-                ReactNative.findNodeHandle(this),
-                UIManager.AndroidRecyclerViewBackedScrollView.Commands.scrollToIndex,
-                [animated, index, velocity, viewPosition, viewOffset],
-            );
-        } else {
-            this.setLocalState({
-                firstVisibleIndex: index,
-                lastVisibleIndex: index + (this.state.lastVisibleIndex - this.state.firstVisibleIndex)
-            }, () => {
-                UIManager.dispatchViewManagerCommand(
-                    ReactNative.findNodeHandle(this),
-                    UIManager.AndroidRecyclerViewBackedScrollView.Commands.scrollToIndex,
-                    [animated, index, velocity, viewPosition, viewOffset],
-                );
-            });
-        }
     };
 
     _needsItemUpdate(itemKey) {
         return this._shouldUpdateAll || this._shouldUpdateKeys.includes(itemKey);
     }
 
-    _handleVisibleItemsChange = ({nativeEvent}) => {
-        var firstIndex = nativeEvent.firstIndex;
-        var lastIndex = nativeEvent.lastIndex;
-
-        this.setLocalState({
-            firstVisibleIndex: firstIndex,
-            lastVisibleIndex: lastIndex,
-        });
-
-        const {onVisibleItemsChange} = this.props;
-        if (onVisibleItemsChange) {
-            onVisibleItemsChange(nativeEvent);
-        }
-    };
-
-    _calcItemRangeToRender(firstVisibleIndex, lastVisibleIndex) {
-        const {dataSource, windowSize} = this.props;
-        var count = dataSource.size();
-        var from = Math.min(count, Math.max(0, firstVisibleIndex - windowSize));
-        var to = Math.min(count, lastVisibleIndex + windowSize);
-        return [from, to];
-    }
-
     _notifyItemMoved(currentPosition, nextPosition) {
         UIManager.dispatchViewManagerCommand(
             ReactNative.findNodeHandle(this),
-            UIManager.AndroidRecyclerViewBackedScrollView.Commands.notifyItemMoved,
+            UIManager.AndroidRecyclerViewBackedScrollView.Commands.notifyItemMoved.toString(),
             [currentPosition, nextPosition],
         );
         this.forceUpdate();
@@ -315,34 +268,16 @@ class RNRecyclerView extends PureComponent {
     _notifyItemRangeInserted(position, count) {
         UIManager.dispatchViewManagerCommand(
             ReactNative.findNodeHandle(this),
-            UIManager.AndroidRecyclerViewBackedScrollView.Commands.notifyItemRangeInserted,
+            UIManager.AndroidRecyclerViewBackedScrollView.Commands.notifyItemRangeInserted.toString(),
             [position, count],
         );
-
-        const {firstVisibleIndex, lastVisibleIndex, itemCount} = this.state;
-
-        if (itemCount === 0) {
-            this.setLocalState({
-                itemCount: this.props.dataSource.size(),
-                firstVisibleIndex: 0,
-                lastVisibleIndex: this.props.initialListSize
-            });
-        } else {
-            if (position <= firstVisibleIndex) {
-                this.setLocalState({
-                    firstVisibleIndex: this.state.firstVisibleIndex + count,
-                    lastVisibleIndex: this.state.lastVisibleIndex + count,
-                });
-            } else {
-                this.forceUpdate();
-            }
-        }
+        this.forceUpdate();
     }
 
     _notifyItemRangeRemoved(position, count) {
         UIManager.dispatchViewManagerCommand(
             ReactNative.findNodeHandle(this),
-            UIManager.AndroidRecyclerViewBackedScrollView.Commands.notifyItemRangeRemoved,
+            UIManager.AndroidRecyclerViewBackedScrollView.Commands.notifyItemRangeRemoved.toString(),
             [position, count],
         );
         this.forceUpdate();
@@ -351,20 +286,30 @@ class RNRecyclerView extends PureComponent {
     _notifyDataSetChanged(itemCount) {
         UIManager.dispatchViewManagerCommand(
             ReactNative.findNodeHandle(this),
-            UIManager.AndroidRecyclerViewBackedScrollView.Commands.notifyDataSetChanged,
+            UIManager.AndroidRecyclerViewBackedScrollView.Commands.notifyDataSetChanged.toString(),
             [itemCount],
         );
         this.setLocalState({
-            itemCount
+            itemCount,
         });
+    }
+
+    _setLayoutManager(data) {
+        UIManager.dispatchViewManagerCommand(
+            ReactNative.findNodeHandle(this),
+            UIManager.AndroidRecyclerViewBackedScrollView.Commands.layoutManager.toString(),
+            data,
+        );
     }
 }
 
 const nativeOnlyProps = {
     nativeOnly: {
         onVisibleItemsChange: true,
-        itemCount: true
-    }
+        onBottom: true,
+        onLoadMore: true,
+        itemCount: true,
+    },
 };
 
 const styles = StyleSheet.create({
@@ -372,7 +317,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: 0,
         left: 0,
-        right: 0
+        right: 0,
     },
 });
 

@@ -8,7 +8,6 @@ import android.view.ContextThemeWrapper;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -31,6 +30,7 @@ import com.facebook.react.views.scroll.VelocityHelper;
 import com.navigations.R;
 import com.navigations.rv.event.ItemLoadBottomEvent;
 import com.navigations.rv.event.ItemLoadChangeEvent;
+import com.navigations.rv.event.ItemTopEvent;
 import com.navigations.rv.event.VisibleItemsChangeEvent;
 
 import java.util.ArrayList;
@@ -86,20 +86,29 @@ public class RecyclerViewBackedScrollView extends RecyclerView {
                     int[] positions = ((StaggeredGridLayoutManager) layoutManager).findLastCompletelyVisibleItemPositions(null);//完全到底
                     lastPosition = lastPosition(positions);
                     lastPositionMax = maxLastPosition(positions);
+
+
+                    int[] ints = ((StaggeredGridLayoutManager) layoutManager).findFirstCompletelyVisibleItemPositions(null);
+                    if (recyclerView.getScrollState() == RecyclerView.SCROLL_STATE_IDLE && firstPosition(ints) == 0) {
+                        nativeModule.getEventDispatcher()
+                                .dispatchEvent(new ItemTopEvent(getId()));
+                    }
                 }
                 if (lastPositionMax == -1 || lastPosition == -1) {
                     return;
                 }
                 if (dy > 0 && lastPosition >= itemCount - 1 - count && count > 0 && lastPositionMax != itemCount - 1) {
                     nativeModule.getEventDispatcher()
-                            .dispatchEvent(new ItemLoadChangeEvent());
+                            .dispatchEvent(new ItemLoadChangeEvent(getId()));
                 }
                 if (lastPositionMax == itemCount - 1 && dy > 0) {
                     nativeModule.getEventDispatcher()
-                            .dispatchEvent(new ItemLoadBottomEvent());
+                            .dispatchEvent(new ItemLoadBottomEvent(getId()));
                 }
 
+
             }
+
         };
         this.addOnScrollListener(onScrollListener);
     }
@@ -250,6 +259,11 @@ public class RecyclerViewBackedScrollView extends RecyclerView {
             return mViews.size();
         }
 
+        public void clear() {
+            mViews.clear();
+            mItemCount = 0;
+        }
+
         @NonNull
         @Override
         public ConcreteViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
@@ -259,19 +273,12 @@ public class RecyclerViewBackedScrollView extends RecyclerView {
         @Override
         public void onBindViewHolder(ConcreteViewHolder holder, int position) {
             RecyclableWrapperViewGroup vg = (RecyclableWrapperViewGroup) holder.itemView;
-            final int p = position + 1;
             View row = getViewByItemIndex(position);
             if (row != null && row.getParent() != vg) {
                 if (row.getParent() != null) {
                     ((ViewGroup) row.getParent()).removeView(row);
                 }
                 vg.addView(row, 0);
-                row.setOnClickListener(new OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        Toast.makeText(row.getContext(), String.format("Native Toast : The position you clicked is %d", p), Toast.LENGTH_SHORT).show();
-                    }
-                });
             }
 
         }
@@ -351,6 +358,20 @@ public class RecyclerViewBackedScrollView extends RecyclerView {
         }
     }
 
+    private int firstPosition(int[] pos) {
+        if (pos == null) {
+            return -1;
+        }
+        if (pos.length == 1) {
+            return pos[0];
+        }
+        int min = pos[0];
+        for (int i = 1; i < pos.length; i++) {
+            min = Math.min(min, pos[i]);
+        }
+        return min;
+    }
+
 
     private int maxLastPosition(int[] pos) {
         if (pos == null) {
@@ -386,11 +407,6 @@ public class RecyclerViewBackedScrollView extends RecyclerView {
 
     public RecyclerViewBackedScrollView(Context context) {
         super(new ContextThemeWrapper(context, R.style.ScrollbarRecyclerView));
-        setHasFixedSize(true);
-        ItemAnimator itemAnimator = getItemAnimator();
-        if (itemAnimator instanceof DefaultItemAnimator) {
-            ((DefaultItemAnimator) itemAnimator).setSupportsChangeAnimations(false);
-        }
         setAdapter(new ReactListAdapter());
     }
 
@@ -496,6 +512,8 @@ public class RecyclerViewBackedScrollView extends RecyclerView {
         }
         mRequestedLayout = true;
         this.post(() -> {
+            measure(MeasureSpec.makeMeasureSpec(getWidth(), MeasureSpec.EXACTLY),
+                    MeasureSpec.makeMeasureSpec(getHeight(), MeasureSpec.EXACTLY));
             onLayout(false, getLeft(), getTop(), getRight(), getBottom());
             mRequestedLayout = false;
         });

@@ -49,6 +49,20 @@ public class HomeFragment extends BaseFragment {
             spannableString.setSpan(span, des.length(), spannableString.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             textView.setText(spannableString);
         }
+        view.findViewById(R.id.button).setOnClickListener(v -> {
+            int pre = list.size();
+            loadData();
+            adapter.notifyItemRangeInserted(pre, 20);
+        });
+        view.findViewById(R.id.button1).setOnClickListener(v -> {
+            list.clear();
+            loadData();
+            StaggeredGridLayoutManager layoutManager = new StaggeredGridLayoutManager(2,
+                    StaggeredGridLayoutManager.VERTICAL);
+            //防止item 交换位置
+            layoutManager.setGapStrategy(StaggeredGridLayoutManager.GAP_HANDLING_NONE);
+            recyclerView.setLayoutManager(layoutManager);
+        });
         recyclerView = view.findViewById(R.id.recycler_view);
         smartRefreshLayout = view.findViewById(R.id.smart_refresh);
         list = new ArrayList<>();
@@ -103,7 +117,7 @@ public class HomeFragment extends BaseFragment {
     }
 
     private void loadData() {
-        for (int i = 0; i < 30; i++) {
+        for (int i = 0; i < 20; i++) {
             list.add(String.valueOf(i + 1));
         }
     }

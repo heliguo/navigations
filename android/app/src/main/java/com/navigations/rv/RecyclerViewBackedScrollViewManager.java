@@ -18,6 +18,9 @@ import com.facebook.react.uimanager.ViewGroupManager;
 import com.facebook.react.uimanager.annotations.ReactProp;
 import com.facebook.react.views.scroll.ScrollEventType;
 import com.navigations.rv.event.ContentSizeChangeEvent;
+import com.navigations.rv.event.ItemLoadBottomEvent;
+import com.navigations.rv.event.ItemLoadChangeEvent;
+import com.navigations.rv.event.ItemTopEvent;
 import com.navigations.rv.event.VisibleItemsChangeEvent;
 
 import java.util.ArrayList;
@@ -35,6 +38,7 @@ public class RecyclerViewBackedScrollViewManager extends ViewGroupManager<Recycl
     public static final int COMMAND_NOTIFY_DATASET_CHANGED = 3;
     public static final int COMMAND_SCROLL_TO_INDEX = 4;
     public static final int COMMAND_NOTIFY_ITEM_MOVED = 5;
+    public static final int COMMAND_LAYOUT_MANAGER = 6;
 
     public static final String LINEAR = "LINEARLAYOUTMANAGER";//(context)
     public static final String GRID = "GRIDLAYOUTMANAGER";//(context, spanCount)
@@ -109,17 +113,14 @@ public class RecyclerViewBackedScrollViewManager extends ViewGroupManager<Recycl
             }
         } else if (style == LAYOUT_MANAGER_STAGGERED) {
             int spanCount = args.getInt(1);
-            int orientation = 1;//default Vertical
-            if (args.size() > 2) {
-                orientation = args.getInt(2);
-            }
-            StaggeredGridLayoutManager layoutManager = new StaggeredGridLayoutManager(spanCount, orientation);
+            StaggeredGridLayoutManager layoutManager = new StaggeredGridLayoutManager(spanCount, StaggeredGridLayoutManager.VERTICAL);
             layoutManager.setGapStrategy(StaggeredGridLayoutManager.GAP_HANDLING_NONE);//瀑布流刷新头部空白问题
             parent.setLayoutManager(layoutManager);
-            if (args.size() > 3) {
-                parent.setLoadMoreCount(args.getInt(3));
+            if (args.size() > 2) {
+                parent.setLoadMoreCount(args.getInt(2));
             }
         }
+        parent.setItemAnimator(null);
 
     }
 
@@ -170,7 +171,8 @@ public class RecyclerViewBackedScrollViewManager extends ViewGroupManager<Recycl
                 "notifyItemRangeRemoved", COMMAND_NOTIFY_ITEM_RANGE_REMOVED,
                 "notifyItemMoved", COMMAND_NOTIFY_ITEM_MOVED,
                 "notifyDataSetChanged", COMMAND_NOTIFY_DATASET_CHANGED,
-                "scrollToIndex", COMMAND_SCROLL_TO_INDEX
+                "scrollToIndex", COMMAND_SCROLL_TO_INDEX,
+                "layoutManager", COMMAND_LAYOUT_MANAGER
         );
     }
 
@@ -237,11 +239,33 @@ public class RecyclerViewBackedScrollViewManager extends ViewGroupManager<Recycl
                 return;
             }
 
+
+            case COMMAND_LAYOUT_MANAGER:
+                int style = args.getInt(0);
+                if (style == LAYOUT_MANAGER_LINEAR) {
+                    parent.setLayoutManager(new LinearLayoutManager(parent.getContext()));
+                    if (args.size() > 1) {
+                        parent.setLoadMoreCount(args.getInt(1));
+                    }
+                } else if (style == LAYOUT_MANAGER_GRID) {
+                    int spanCount = args.getInt(1);
+                    parent.setLayoutManager(new GridLayoutManager(parent.getContext(), spanCount));
+                    if (args.size() > 2) {
+                        parent.setLoadMoreCount(args.getInt(2));
+                    }
+                } else if (style == LAYOUT_MANAGER_STAGGERED) {
+                    int spanCount = args.getInt(1);
+                    StaggeredGridLayoutManager layoutManager = new StaggeredGridLayoutManager(spanCount, StaggeredGridLayoutManager.VERTICAL);
+                    layoutManager.setGapStrategy(StaggeredGridLayoutManager.GAP_HANDLING_NONE);//瀑布流刷新头部空白问题
+                    parent.setLayoutManager(layoutManager);
+                    if (args.size() > 2) {
+                        parent.setLoadMoreCount(args.getInt(2));
+                    }
+                }
+                return;
+
             default:
-                throw new IllegalArgumentException(String.format(
-                        "Unsupported command %s received by %s.",
-                        commandId,
-                        getClass().getSimpleName()));
+                break;
         }
     }
 
@@ -249,9 +273,12 @@ public class RecyclerViewBackedScrollViewManager extends ViewGroupManager<Recycl
     @Override
     public Map<String, Object> getExportedCustomBubblingEventTypeConstants() {
         return MapBuilder.<String, Object>builder()
-                .put(ScrollEventType.getJSEventName(ScrollEventType.SCROLL), MapBuilder.of("registrationName", "onScroll"))
-                .put(ContentSizeChangeEvent.EVENT_NAME, MapBuilder.of("registrationName", "onContentSizeChange"))
-                .put(VisibleItemsChangeEvent.EVENT_NAME, MapBuilder.of("registrationName", "onVisibleItemsChange"))
+                .put(ScrollEventType.getJSEventName(ScrollEventType.SCROLL), MapBuilder.of("phasedRegistrationNames", MapBuilder.of("bubbled", "onScroll")))
+                .put(ItemLoadBottomEvent.EVENT_BOTTOM, MapBuilder.of("phasedRegistrationNames", MapBuilder.of("bubbled", "onBottom")))
+                .put(ItemLoadChangeEvent.EVENT_LOAD_MORE, MapBuilder.of("phasedRegistrationNames", MapBuilder.of("bubbled", "onLoadMore")))
+                .put(ContentSizeChangeEvent.EVENT_NAME, MapBuilder.of("phasedRegistrationNames", MapBuilder.of("bubbled", "onContentSizeChange")))
+                .put(ItemTopEvent.EVENT_TOP, MapBuilder.of("phasedRegistrationNames", MapBuilder.of("bubbled", "onTop")))
+                .put(VisibleItemsChangeEvent.EVENT_NAME, MapBuilder.of("phasedRegistrationNames", MapBuilder.of("bubbled", "onVisibleItemsChange")))
                 .build();
     }
 }

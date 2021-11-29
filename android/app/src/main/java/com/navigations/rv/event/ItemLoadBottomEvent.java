@@ -1,5 +1,6 @@
 package com.navigations.rv.event;
 
+import com.facebook.react.bridge.Arguments;
 import com.facebook.react.uimanager.events.Event;
 import com.facebook.react.uimanager.events.RCTEventEmitter;
 
@@ -8,7 +9,11 @@ import com.facebook.react.uimanager.events.RCTEventEmitter;
  */
 public class ItemLoadBottomEvent extends Event<ItemLoadBottomEvent> {
 
-    public static final String EVENT_BOTTOM = "event_bottom";
+    public static final String EVENT_BOTTOM = "bottom";
+
+    public ItemLoadBottomEvent(int viewTag){
+        super(viewTag);
+    }
 
     @Override
     public String getEventName() {
@@ -17,6 +22,6 @@ public class ItemLoadBottomEvent extends Event<ItemLoadBottomEvent> {
 
     @Override
     public void dispatch(RCTEventEmitter rctEventEmitter) {
-        rctEventEmitter.receiveEvent(getViewTag(), EVENT_BOTTOM, null);
+        rctEventEmitter.receiveEvent(getViewTag(), EVENT_BOTTOM, Arguments.createMap());
     }
 }
