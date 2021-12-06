@@ -199,6 +199,7 @@ dependencies {
     implementation 'androidx.coordinatorlayout:coordinatorlayout:1.1.0'
     implementation project(path: ':fragmentLib')
     implementation 'androidx.recyclerview:recyclerview:1.2.0'
+    implementation project(path: ':rnbanner')
 
     debugImplementation("com.facebook.flipper:flipper:${FLIPPER_VERSION}") {
         exclude group:'com.facebook.fbjni'

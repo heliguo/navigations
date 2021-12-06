@@ -1,0 +1,14 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "npm",
+			"script": "android",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"label": "npm: android",
+			"detail": "react-native run-android"
+		}
+	]
+}

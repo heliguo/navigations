@@ -26,6 +26,9 @@ public class RNRecyclerviewPackage implements ReactPackage {
         return Arrays.asList(
                 new RecyclerViewBackedScrollViewManager(),
                 new RecyclerViewItemViewManager(),
+                new RecyclerViewEmptyViewManager(),
+                new RecyclerViewHeaderViewManager(),
+                new RecyclerViewFooterViewManager(),
                 new RecyclerRefreshLayoutManager()
         );
     }

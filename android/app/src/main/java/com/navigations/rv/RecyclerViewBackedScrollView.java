@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.PointF;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.ContextThemeWrapper;
 import android.view.MotionEvent;
 import android.view.View;
@@ -31,7 +32,6 @@ import com.navigations.R;
 import com.navigations.rv.event.ItemLoadBottomEvent;
 import com.navigations.rv.event.ItemLoadChangeEvent;
 import com.navigations.rv.event.ItemTopEvent;
-import com.navigations.rv.event.VisibleItemsChangeEvent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -151,12 +151,18 @@ public class RecyclerViewBackedScrollView extends RecyclerView {
         private final ReactListAdapter mAdapter;
         private int mLastMeasuredWidth;
         private int mLastMeasuredHeight;
+        private boolean fullSize;
 
         public RecyclableWrapperViewGroup(Context context, ReactListAdapter adapter) {
+            this(context, adapter, false);
+        }
+
+        public RecyclableWrapperViewGroup(Context context, ReactListAdapter adapter, boolean full) {
             super(context);
             mAdapter = adapter;
             mLastMeasuredHeight = 10;
             mLastMeasuredWidth = 10;
+            fullSize = full;
             setClickable(true);
         }
 
@@ -213,6 +219,9 @@ public class RecyclerViewBackedScrollView extends RecyclerView {
                     spanCount = ((GridLayoutManager) layoutManager).getSpanCount();
                 }
             }
+            if (fullSize) {
+                spanCount = 1;
+            }
             setMeasuredDimension(mLastMeasuredWidth / spanCount, mLastMeasuredHeight);
         }
 
@@ -231,25 +240,44 @@ public class RecyclerViewBackedScrollView extends RecyclerView {
         }
     }
 
+    @Override
+    public void setLayoutManager(@Nullable LayoutManager layout) {
+        super.setLayoutManager(layout);
+        if (layout instanceof GridLayoutManager) {
+            GridLayoutManager gridLayoutManager = (GridLayoutManager) layout;
+            final int spanCount = gridLayoutManager.getSpanCount();
+            gridLayoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
+                @Override
+                public int getSpanSize(int position) {
+                    if (getAdapter() instanceof ReactListAdapter) {
+                        BaseView baseView = ((ReactListAdapter) getAdapter()).getView(position);
+                        if (!(baseView instanceof RecyclerViewItemView)) {
+                            return spanCount;
+                        }
+                    }
+
+                    return 1;
+                }
+            });
+        }
+    }
+
     static class ReactListAdapter extends RecyclerView.Adapter<ConcreteViewHolder> {
 
-        private final List<RecyclerViewItemView> mViews = new ArrayList<>();
+        private final List<BaseView> mViews = new ArrayList<>();
         private int mItemCount = 0;
 
         public ReactListAdapter() {
 
         }
 
-        public void addView(RecyclerViewItemView child, int index) {
+        public void addView(BaseView child, int index) {
             mViews.add(index, child);
-
-            final int itemIndex = child.getItemIndex();
-
-            notifyItemChanged(itemIndex);
+            notifyItemChanged(index);
         }
 
         public void removeViewAt(int index) {
-            RecyclerViewItemView child = mViews.get(index);
+            BaseView child = mViews.get(index);
             if (child != null) {
                 mViews.remove(index);
             }
@@ -259,21 +287,22 @@ public class RecyclerViewBackedScrollView extends RecyclerView {
             return mViews.size();
         }
 
-        public void clear() {
-            mViews.clear();
-            mItemCount = 0;
-        }
 
         @NonNull
         @Override
-        public ConcreteViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            return new ConcreteViewHolder(new RecyclableWrapperViewGroup(parent.getContext(), this));
+        public ConcreteViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            if (viewType == 0)
+                return new ConcreteViewHolder(new RecyclableWrapperViewGroup(parent.getContext(), this));
+            else
+                return new ConcreteViewHolder(new RecyclableWrapperViewGroup(parent.getContext(), this, true));
+
         }
 
         @Override
         public void onBindViewHolder(ConcreteViewHolder holder, int position) {
             RecyclableWrapperViewGroup vg = (RecyclableWrapperViewGroup) holder.itemView;
-            View row = getViewByItemIndex(position);
+            View row = getView(position);
+            Log.e("TAG", "onBindViewHolder: " + row);
             if (row != null && row.getParent() != vg) {
                 if (row.getParent() != null) {
                     ((ViewGroup) row.getParent()).removeView(row);
@@ -281,6 +310,19 @@ public class RecyclerViewBackedScrollView extends RecyclerView {
                 vg.addView(row, 0);
             }
 
+        }
+
+        @Override
+        public int getItemViewType(int position) {
+            BaseView baseView = getView(position);
+            if (baseView instanceof RecyclerViewEmptyView) {
+                return 1;
+            } else if (baseView instanceof RecyclerViewHeaderView) {
+                return 2;
+            } else if (baseView instanceof RecyclerViewFooterView) {
+                return 3;
+            }
+            return 0;
         }
 
         @Override
@@ -298,18 +340,8 @@ public class RecyclerViewBackedScrollView extends RecyclerView {
             this.mItemCount = itemCount;
         }
 
-        public View getView(int index) {
+        public BaseView getView(int index) {
             return mViews.get(index);
-        }
-
-        public RecyclerViewItemView getViewByItemIndex(int position) {
-            for (int i = 0; i < mViews.size(); i++) {
-                if (mViews.get(i).getItemIndex() == position) {
-                    return mViews.get(i);
-                }
-            }
-
-            return null;
         }
     }
 
@@ -337,25 +369,6 @@ public class RecyclerViewBackedScrollView extends RecyclerView {
                             getWidth(),
                             getHeight()));
         }
-        LayoutManager layoutManager = getLayoutManager();
-        int firstIndex = 0;
-        int lastIndex = 0;
-        if (layoutManager instanceof LinearLayoutManager) {
-            ((LinearLayoutManager) layoutManager).findFirstVisibleItemPosition();
-        } else if (layoutManager instanceof StaggeredGridLayoutManager) {
-            int[] pos = ((StaggeredGridLayoutManager) getLayoutManager()).findLastVisibleItemPositions(null);
-            lastIndex = maxLastPosition(pos);
-        }
-        if (firstIndex != mFirstVisibleIndex || lastIndex != mLastVisibleIndex) {
-            nativeModule.getEventDispatcher()
-                    .dispatchEvent(new VisibleItemsChangeEvent(
-                            getId(),
-                            firstIndex,
-                            lastIndex));
-
-            mFirstVisibleIndex = firstIndex;
-            mLastVisibleIndex = lastIndex;
-        }
     }
 
     private int firstPosition(int[] pos) {
@@ -371,7 +384,6 @@ public class RecyclerViewBackedScrollView extends RecyclerView {
         }
         return min;
     }
-
 
     private int maxLastPosition(int[] pos) {
         if (pos == null) {
@@ -410,7 +422,7 @@ public class RecyclerViewBackedScrollView extends RecyclerView {
         setAdapter(new ReactListAdapter());
     }
 
-    void addViewToAdapter(RecyclerViewItemView child, int index) {
+    void addViewToAdapter(BaseView child, int index) {
         Adapter<?> adapter = getAdapter();
         if (adapter instanceof ReactListAdapter) {
             ((ReactListAdapter) adapter).addView(child, index);
@@ -532,7 +544,7 @@ public class RecyclerViewBackedScrollView extends RecyclerView {
             if (adapter == null) {
                 return;
             }
-            final View view = adapter.getViewByItemIndex(position);
+            final View view = adapter.getView(position);
             if (view != null) {
                 final int viewHeight = view.getHeight();
 
@@ -618,6 +630,11 @@ public class RecyclerViewBackedScrollView extends RecyclerView {
         Objects.requireNonNull(this.getLayoutManager()).startSmoothScroll(smoothScroller);
     }
 
+    /**
+     * 反转布局
+     *
+     * @param inverted
+     */
     public void setReverse(boolean inverted) {
         LayoutManager layoutManager = getLayoutManager();
         if (layoutManager instanceof LinearLayoutManager) {
@@ -628,6 +645,11 @@ public class RecyclerViewBackedScrollView extends RecyclerView {
 
     }
 
+    /**
+     * 动画
+     *
+     * @param enabled
+     */
     public void setItemAnimatorEnabled(boolean enabled) {
         if (enabled) {
             DefaultItemAnimator animator = new DefaultItemAnimator();

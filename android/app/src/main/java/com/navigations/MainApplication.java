@@ -16,6 +16,7 @@ import com.facebook.react.ReactInstanceManager;
 import com.facebook.react.ReactNativeHost;
 import com.facebook.react.ReactPackage;
 import com.facebook.soloader.SoLoader;
+import com.library.rnbanner.RNBannerPackage;
 import com.navigations.common.CommonPackage;
 import com.navigations.homepage.HomePackage;
 import com.navigations.rv.RNRecyclerviewPackage;
@@ -43,6 +44,7 @@ public class MainApplication extends NavigationApplication {
                      packages.add(new HomePackage());
                      packages.add(new CommonPackage());
                      packages.add(new RNRecyclerviewPackage());
+                     packages.add(new RNBannerPackage());
                     return packages;
                 }
 

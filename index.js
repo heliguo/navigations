@@ -4,9 +4,9 @@ import {Navigation} from 'react-native-navigation';
 import {HomePageFragment} from './src/HomePageFragment';
 import Icon from 'react-native-vector-icons/FontAwesome5';
 import PropsText from './src/PropsText';
-import BlinkApp from './src/BlinkApp';
 import NativeUIManager from 'react-native/Libraries/ReactNative/NativeUIManager';
 import RNRecyclerViewTest from './src/RNRecyclerViewTest';
+import RNBannerTest from './src/RNBannerTest';
 
 
 const LoginScreen = () => {
@@ -65,9 +65,8 @@ const testStyle = StyleSheet.create({
 
 const HomeScreen2 = () => {
     return (
+        // <RNBannerTest/>
         <View style={styles.root}>
-
-            <BlinkApp/>
 
             <Button
                 testId={'button'}
@@ -112,13 +111,13 @@ HomeScreen.options = {
 HomeScreen2.options = {
     topBar: {
         title: {
-            text: '我的',
+            text: 'banner',
         },
     },
     bottomTab: {
         // icon: <Icon name={'heart'} color={'#E6E6E6'} size={20}/>,
         // selectedIcon: <Icon name={'heart-filled'} color={'#FF3C51'} size={20}/>,
-        text: '我的',
+        text: 'banner',
         textColor: '#E6E6E6',
         selectedTextColor: '#FF3C51',
     },

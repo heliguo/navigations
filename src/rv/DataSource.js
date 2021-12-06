@@ -86,6 +86,10 @@ export default class DataSource {
         return this._keyExtractor(item, index);
     }
 
+    position(item) {
+        return this._data.indexOf(item);
+    }
+
     _addListener(listener) {
         this._listeners.push(listener);
     }

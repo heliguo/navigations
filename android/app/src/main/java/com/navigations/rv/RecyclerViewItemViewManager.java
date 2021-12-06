@@ -21,8 +21,4 @@ public class RecyclerViewItemViewManager extends ViewGroupManager<RecyclerViewIt
         return new RecyclerViewItemView(reactContext);
     }
 
-    @ReactProp(name = "itemIndex")
-    public void setItemIndex(RecyclerViewItemView view, int itemIndex) {
-        view.setItemIndex(itemIndex);
-    }
 }
